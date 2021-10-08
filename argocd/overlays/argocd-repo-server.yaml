@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-repo-server
+spec:
+  template:
+    spec:
+
+      volumes:
+      - name: custom-tools
+        emptyDir: {}
+
+      initContainers:
+      - name: download-tools
+        image: registry.access.redhat.com/ubi8
+        command: [sh, -c]
+        args:
+          - curl -L https://github.com/IBM/argocd-vault-plugin/releases/download/v$(AVP_VERSION)/argocd-vault-plugin_$(AVP_VERSION)_linux_amd64 -o argocd-vault-plugin
+            &&\
+
+            chmod +x argocd-vault-plugin &&\
+
+            mv argocd-vault-plugin /custom-tools/
+        env:
+          - name: AVP_VERSION
+            value: 1.4.0
+        volumeMounts:
+          - mountPath: /custom-tools
+            name: custom-tools
+
+      containers:
+      - name: argocd-repo-server
+
+        volumeMounts:
+        - name: custom-tools
+          subPath: argocd-vault-plugin
+          mountPath: /usr/local/bin/argocd-vault-plugin
+
+        # Configure AVP to use Kubernetes auth to Vault
+        env:
+          - name: AVP_TYPE
+            value: vault
+          - name: VAULT_ADDR
+            value: http://vault:8200
+          - name: AVP_AUTH_TYPE
+            value: k8s
+          - name: AVP_K8S_ROLE
+            value: argocd
+
+      # Optional. Useful if you want to either:
+      # - Pass the argocd-vault-plugin configuration via a pre-existing Secret
+      # - Use Kuberenetes auth to your Vault instance
+      automountServiceAccountToken: true

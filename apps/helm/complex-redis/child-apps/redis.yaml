@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: redis
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc 
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: redis
+    targetRevision: 15.4.0
+    helm:
+      values: |
+        architecture: standalone
+        auth:
+          enabled: true
+          existingSecret: my-redis
+          existingSecretPasswordKey: redis-password
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-nginx
+data:  
+  nginx.conf: |
+    events {}
+    env MY_SECRET;
+    http {
+        server {
+            listen 8080;
+            location / {
+                set_by_lua $my_secret 'return os.getenv("MY_SECRET")';
+                return 200 $my_secret;
+            }
+        }
+    }
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-nginx
+  annotations:
+
+    # Our special annotation to tell AVP where the secrets are
+    avp.kubernetes.io/path: "secret/data/my-nginx"
+stringData:  
+  MY_SECRET: <password>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-nginx
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: docker.io/openresty/openresty:1.19.9.1-0-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - secretRef:
+            name: my-nginx
+        volumeMounts:
+        - name: nginx-conf
+          mountPath: /usr/local/openresty/nginx/conf/
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: my-nginx

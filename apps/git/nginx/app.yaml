@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-nginx
+spec:
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc 
+  project: default
+  source:
+    repoURL: 'https://github.com/jkayani/avp-demo-kubecon-2021'
+    targetRevision: master
+    path: apps/git/nginx/manifests
+
+    # We're telling Argo CD to use our plugin to deploy the manifests
+    plugin:
+      name: argocd-vault

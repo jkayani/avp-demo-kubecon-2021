@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault
+spec:
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc 
+  project: default
+  source:
+    repoURL: 'https://helm.releases.hashicorp.com'
+    chart: vault
+    targetRevision: 0.15.0
+    helm:
+      releaseName: vault
+      values: |
+        injector:
+          enabled: false
+
+        server:
+          dev:
+            enabled: true
+
+          postStart:
+            - /bin/sh
+            - -c
+
+            - |
+              sleep 10s &&\
+
+              printf 'path "secret/*"{\ncapabilities=["read"]\n}' | vault policy write demo-policy - &&\
+
+              vault auth enable kubernetes &&\
+              vault write auth/kubernetes/config kubernetes_host=https://kubernetes.docker.internal:6443 &&\
+              vault write auth/kubernetes/role/argocd \
+                bound_service_account_names=default \
+                bound_service_account_namespaces=default \
+                policies="demo-policy"
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

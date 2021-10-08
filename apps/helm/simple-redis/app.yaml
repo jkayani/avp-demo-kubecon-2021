@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-redis
+spec:
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc 
+  project: default
+  source:
+    repoURL: https://github.com/bitnami/charts/
+    targetRevision: master
+    path: bitnami/redis
+    plugin:
+      name: argocd-vault-helm
+      env:
+
+        # These are the arguments we pass to "helm template"
+        - name: helm_args
+          value: |
+            --set architecture=standalone
+            --set auth.enabled=true
+            --set global.redis.password=<path:secret/data/my-redis#password>
