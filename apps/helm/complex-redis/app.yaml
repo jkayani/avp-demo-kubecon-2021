@@ -9,5 +9,5 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/jkayani/avp-demo-kubecon-2021'
-    targetRevision: master
+    targetRevision: HEAD
     path: apps/helm/complex-redis/child-apps
