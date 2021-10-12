@@ -121,7 +121,7 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/jkayani/avp-demo-kubecon-2021'
-    targetRevision: master
+    targetRevision: HEAD
     path: apps/git/nginx/manifests
 
     # We're telling Argo CD to use our plugin to deploy the manifests
@@ -175,7 +175,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/bitnami/charts/
-    targetRevision: master
+    targetRevision: HEAD
     path: bitnami/redis
     plugin:
       name: argocd-vault-helm
