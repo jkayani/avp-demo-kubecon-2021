@@ -21,6 +21,8 @@ Details for all manifests applied to our clusters are available in `README` file
 kustomize build argocd/overlays | kubectl apply -f -
 
 kubectl port-forward svc/argocd-server 8080:80 &>/dev/null &
+
+kubectl get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d | pbcopy
 ```
 
 ### Deploy Vault
@@ -127,16 +129,9 @@ spec:
     # We're telling Argo CD to use our plugin to deploy the manifests
     plugin:
       name: argocd-vault
-
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
 EOF
 
 kubectl apply -f apps/git/nginx/app.yaml
-
-kubectl get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d | pbcopy
 
 kubectl port-forward deployment/my-nginx 8081:8080
 ```
@@ -187,10 +182,6 @@ spec:
             --set architecture=standalone
             --set auth.enabled=true
             --set global.redis.password=<path:secret/data/my-redis#password>
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
 EOF
 
 kubectl apply -f apps/helm/simple-redis/app.yaml
