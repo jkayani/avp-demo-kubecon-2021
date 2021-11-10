@@ -8,9 +8,9 @@ spec:
     server: https://kubernetes.default.svc 
   project: default
   source:
-    repoURL: https://github.com/bitnami/charts/
-    targetRevision: HEAD
-    path: bitnami/redis
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: redis
+    targetRevision: 15.4.0
     plugin:
       name: argocd-vault-helm
       env:

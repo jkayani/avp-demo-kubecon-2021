@@ -28,12 +28,3 @@ data:
           - |
             helm template $ARGOCD_APP_NAME ${helm_args} -n $ARGOCD_APP_NAMESPACE . |\
             argocd-vault-plugin generate -
-
-  repository.credentials: |
-    - passwordSecret:
-        key: password
-        name: gh-credentials
-      url: https://github.com
-      usernameSecret:
-        key: username
-        name: gh-credentials

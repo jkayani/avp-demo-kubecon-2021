@@ -31,7 +31,9 @@ spec:
               printf 'path "secret/*"{\ncapabilities=["read"]\n}' | vault policy write demo-policy - &&\
 
               vault auth enable kubernetes &&\
-              vault write auth/kubernetes/config kubernetes_host=https://kubernetes.docker.internal:6443 &&\
+              vault write auth/kubernetes/config\
+                kubernetes_host=https://kubernetes.docker.internal:6443 \
+                disable_iss_validation=true &&\
               vault write auth/kubernetes/role/argocd \
                 bound_service_account_names=default \
                 bound_service_account_namespaces=default \
