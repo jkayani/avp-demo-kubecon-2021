@@ -1,10 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+# Note: 2.3.4 will NOT work, env vars from the Application spec aren't passed to the plugin at all
 resources:
-- github.com/argoproj/argo-cd//manifests/crds?ref=v2.3.4
-- github.com/argoproj/argo-cd//manifests/base?ref=v2.3.4
-- github.com/argoproj/argo-cd//manifests/cluster-rbac?ref=v2.3.4
+- github.com/argoproj/argo-cd//manifests/crds?ref=v2.4.0-rc5
+- github.com/argoproj/argo-cd//manifests/base?ref=v2.4.0-rc5
+- github.com/argoproj/argo-cd//manifests/cluster-rbac?ref=v2.4.0-rc5
 - avp.yaml
 
 patchesStrategicMerge:

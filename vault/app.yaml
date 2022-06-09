@@ -37,7 +37,7 @@ spec:
                 kubernetes_host=https://192.168.59.101:8443 \
                 disable_iss_validation=true &&\
               vault write auth/kubernetes/role/argocd \
-                bound_service_account_names=default \
+                bound_service_account_names=argocd-repo-server \
                 bound_service_account_namespaces=argocd \
                 policies="demo-policy"
   syncPolicy:
