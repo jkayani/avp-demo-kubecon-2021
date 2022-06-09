@@ -7,23 +7,29 @@ spec:
     spec:
 
       # Mount SA token for Kubernets auth
+      # Note: In 2.4.0 onward, there is a dedicated SA for repo-server (not default)
       automountServiceAccountToken: true
 
-      # Download AVP
+      # Download tools
       initContainers:
       - name: download-tools
         image: registry.access.redhat.com/ubi8
         command: [sh, -c]
         args:
-          - curl -L https://github.com/IBM/argocd-vault-plugin/releases/download/v$(AVP_VERSION)/argocd-vault-plugin_$(AVP_VERSION)_linux_amd64 -o argocd-vault-plugin
-            &&\
+          - >-
+            curl -L https://github.com/IBM/argocd-vault-plugin/releases/download/v$(AVP_VERSION)/argocd-vault-plugin_$(AVP_VERSION)_linux_amd64 -o argocd-vault-plugin &&
+            chmod +x argocd-vault-plugin &&
+            mv argocd-vault-plugin /custom-tools/ &&
 
-            chmod +x argocd-vault-plugin &&\
-
-            mv argocd-vault-plugin /custom-tools/
+            curl -L https://get.helm.sh/helm-v$(HELM_VERSION)-linux-amd64.tar.gz -o helm.tar.gz &&
+            tar -xvf helm.tar.gz &&
+            chmod +x linux-amd64/helm &&
+            mv linux-amd64/helm /custom-tools
         env:
           - name: AVP_VERSION
             value: 1.11.0
+          - name: HELM_VERSION
+            value: 3.9.0
         volumeMounts:
           - mountPath: /custom-tools
             name: custom-tools
@@ -52,14 +58,19 @@ spec:
             name: plugins
           - mountPath: /tmp
             name: tmp
+          
+          # Register plugins into sidecar
           - mountPath: /home/argocd/cmp-server/config/plugin.yaml
             subPath: plugin.yaml
             name: cmp-plugin
 
-          # Important: Mount AVP into $PATH
+          # Important: Mount tools into $PATH
           - name: custom-tools
             subPath: argocd-vault-plugin
             mountPath: /usr/local/bin/argocd-vault-plugin
+          - name: custom-tools
+            subPath: helm
+            mountPath: /usr/local/bin/helm
       volumes:
         - configMap:
             name: cmp-plugin

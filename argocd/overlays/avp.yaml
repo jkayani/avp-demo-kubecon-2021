@@ -4,24 +4,37 @@ metadata:
   name: cmp-plugin
 data:
   plugin.yaml: |
+    --- 
     apiVersion: argoproj.io/v1alpha1
     kind: ConfigManagementPlugin
-    metadata:
-      name: argocd-vault-plugin
-    spec:
-      version: v1.0
-      generate:
-        command: 
-          - argocd-vault-plugin
-          - generate
-          - "./"
-      discover:
-        find:
-          command:
-            - find
-            - "."
-            - -name
-            - "*.yaml"
+    metadata: 
+      name: argocd-vault-plugin-helm
+    spec: 
       allowConcurrency: true
+
+      # Note: this command is run _before_ any Helm templating is done, therefore the logic is to check
+      # if this looks like a Helm chart and if so return 0
+      discover: 
+        find: 
+          command: 
+            - sh
+            - "-c"
+            - "find . -name 'Chart.yaml' && find . -name 'values.yaml'"
+
+      # Note: Due to https://github.com/argoproj/argo-cd/pull/9319, env vars from the Application manifest are prefixed with `ARGOCD_ENV`
+      generate: 
+        command: 
+          - sh
+          - "-c"
+          - "helm template $ARGOCD_APP_NAME -n $ARGOCD_APP_NAMESPACE ${ARGOCD_ENV_HELM_ARGS} . | argocd-vault-plugin generate -"
+
+      # TODO: use base image with ca-certificates to avoid `--insecure-skip-tls-verify`
+      init: 
+        command: 
+          - sh
+          - "-c"
+          - "export HELM_CACHE_HOME=/tmp/cache && export HELM_CONFIG_HOME=/tmp/config && export HELM_DATA_HOME=/tmp/data && helm repo add --insecure-skip-tls-verify bitnami https://charts.bitnami.com/bitnami && (helm dependency build || echo)"
       lockRepo: false
+      version: v1.0
+
 ---

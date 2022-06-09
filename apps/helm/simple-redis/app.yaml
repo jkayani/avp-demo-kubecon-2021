@@ -10,13 +10,11 @@ spec:
   source:
     repoURL: https://charts.bitnami.com/bitnami
     chart: redis
-    targetRevision: 15.4.0
+    targetRevision: 15.7.0
     plugin:
-      name: argocd-vault-helm
       env:
-
         # These are the arguments we pass to "helm template"
-        - name: helm_args
+        - name: HELM_ARGS
           value: |
             --set architecture=standalone
             --set auth.enabled=true
