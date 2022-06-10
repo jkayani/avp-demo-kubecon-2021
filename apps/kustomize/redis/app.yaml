@@ -1,0 +1,13 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-nginx-kustomize
+spec:
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc 
+  project: default
+  source:
+    repoURL: 'https://github.com/jkayani/avp-demo-kubecon-2021'
+    targetRevision: sidecar
+    path: apps/kustomize/redis/manifests
