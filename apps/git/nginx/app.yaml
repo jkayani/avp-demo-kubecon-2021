@@ -11,7 +11,3 @@ spec:
     repoURL: 'https://github.com/jkayani/avp-demo-kubecon-2021'
     targetRevision: HEAD
     path: apps/git/nginx/manifests
-
-    # We're telling Argo CD to use our plugin to deploy the manifests
-    plugin:
-      name: argocd-vault
