@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: cmp-plugin
 data:
-  plugin.yaml: |
+  avp-helm.yaml: |
     --- 
     apiVersion: argoproj.io/v1alpha1
     kind: ConfigManagementPlugin
@@ -36,5 +36,27 @@ data:
           - "export HELM_CACHE_HOME=/tmp/cache && export HELM_CONFIG_HOME=/tmp/config && export HELM_DATA_HOME=/tmp/data && helm repo add --insecure-skip-tls-verify bitnami https://charts.bitnami.com/bitnami && (helm dependency build || echo)"
       lockRepo: false
       version: v1.0
+  avp.yaml: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata: 
+      name: argocd-vault-plugin
+    spec: 
+      allowConcurrency: true
 
+      discover: 
+        find: 
+          command: 
+            - sh
+            - "-c"
+            - "find . -name '*.yaml' | xargs -I {} grep \"<path\\|avp\\.kubernetes\\.io\" {} | grep ."
+
+      generate: 
+        command: 
+          - argocd-vault-plugin
+          - generate
+          - "."
+
+      lockRepo: false
+      version: v1.0
 ---
