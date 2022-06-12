@@ -19,6 +19,8 @@ spec:
             value: 1.11.0
           - name: HELM_VERSION
             value: 3.9.0
+          - name: KUSTOMIZE_VERSION
+            value: 4.5.5
         command: [sh, -c]
         args:
           - >-
@@ -29,16 +31,22 @@ spec:
             curl -L https://get.helm.sh/helm-v$(HELM_VERSION)-linux-amd64.tar.gz -o helm.tar.gz &&
             tar -xvf helm.tar.gz &&
             chmod +x linux-amd64/helm &&
-            mv linux-amd64/helm /custom-tools
+            mv linux-amd64/helm /custom-tools &&
+
+            curl -L https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv$(KUSTOMIZE_VERSION)/kustomize_v$(KUSTOMIZE_VERSION)_linux_amd64.tar.gz -o kustomize.tar.gz &&
+            tar -xvf kustomize.tar.gz &&
+            chmod +x kustomize &&
+            mv kustomize /custom-tools
+
         volumeMounts:
           - mountPath: /custom-tools
             name: custom-tools
 
       # Run out of the box `cmp-server` in busybox image, enough to run AVP 
       containers:
-      - name: cmp
+      - name: avp-helm
         command: [/var/run/argocd/argocd-cmp-server]
-        image: busybox
+        image: registry.access.redhat.com/ubi8
         securityContext:
           runAsNonRoot: true
           runAsUser: 999
@@ -72,9 +80,45 @@ spec:
             subPath: helm
             mountPath: /usr/local/bin/helm
 
-      - name: cmp2
+      - name: avp-kustomize
         command: [/var/run/argocd/argocd-cmp-server]
-        image: busybox
+        image: registry.access.redhat.com/ubi8
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 999
+        env:
+          - name: AVP_TYPE
+            value: vault
+          - name: VAULT_ADDR
+            value: http://vault.default.svc:8200
+          - name: AVP_AUTH_TYPE
+            value: k8s
+          - name: AVP_K8S_ROLE
+            value: argocd
+        volumeMounts:
+          - mountPath: /var/run/argocd
+            name: var-files
+          - mountPath: /home/argocd/cmp-server/plugins
+            name: plugins
+          - mountPath: /tmp
+            name: tmp
+          
+          # Register plugins into sidecar
+          - mountPath: /home/argocd/cmp-server/config/plugin.yaml
+            subPath: avp-kustomize.yaml
+            name: cmp-plugin
+
+          # Important: Mount tools into $PATH
+          - name: custom-tools
+            subPath: argocd-vault-plugin
+            mountPath: /usr/local/bin/argocd-vault-plugin
+          - name: custom-tools
+            subPath: kustomize
+            mountPath: /usr/local/bin/kustomize
+
+      - name: avp
+        command: [/var/run/argocd/argocd-cmp-server]
+        image: registry.access.redhat.com/ubi8
         securityContext:
           runAsNonRoot: true
           runAsUser: 999
@@ -104,9 +148,6 @@ spec:
           - name: custom-tools
             subPath: argocd-vault-plugin
             mountPath: /usr/local/bin/argocd-vault-plugin
-          - name: custom-tools
-            subPath: helm
-            mountPath: /usr/local/bin/helm
       volumes:
         - configMap:
             name: cmp-plugin

@@ -3,6 +3,33 @@ kind: ConfigMap
 metadata:
   name: cmp-plugin
 data:
+  avp-kustomize.yaml: |
+    ---
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: argocd-vault-plugin-kustomize
+    spec:
+      allowConcurrency: true
+
+      # Note: this command is run _before_ anything is done, therefore the logic is to check
+      # if this looks like a Kustomize bundle
+      discover:
+        find:
+          command:
+            - find
+            - "."
+            - -name
+            - kustomization.yaml
+
+      generate:
+        command:
+          - sh
+          - "-c"
+          - "kustomize build . | argocd-vault-plugin generate -"
+
+      lockRepo: false
+      version: v1.0
   avp-helm.yaml: |
     --- 
     apiVersion: argoproj.io/v1alpha1
@@ -26,14 +53,20 @@ data:
         command: 
           - sh
           - "-c"
-          - "helm template $ARGOCD_APP_NAME -n $ARGOCD_APP_NAMESPACE ${ARGOCD_ENV_HELM_ARGS} . | argocd-vault-plugin generate -"
+          - |
+            helm template $ARGOCD_APP_NAME -n $ARGOCD_APP_NAMESPACE ${ARGOCD_ENV_HELM_ARGS} . |
+            argocd-vault-plugin generate -
 
-      # TODO: use base image with ca-certificates to avoid `--insecure-skip-tls-verify`
       init: 
         command: 
           - sh
           - "-c"
-          - "export HELM_CACHE_HOME=/tmp/cache && export HELM_CONFIG_HOME=/tmp/config && export HELM_DATA_HOME=/tmp/data && helm repo add --insecure-skip-tls-verify bitnami https://charts.bitnami.com/bitnami && (helm dependency build || echo)"
+          - |
+            export HELM_CACHE_HOME=/tmp/cache &&
+            export HELM_CONFIG_HOME=/tmp/config &&
+            export HELM_DATA_HOME=/tmp/data &&
+            helm repo add bitnami https://charts.bitnami.com/bitnami &&
+            (helm dependency build || true)
       lockRepo: false
       version: v1.0
   avp.yaml: |
